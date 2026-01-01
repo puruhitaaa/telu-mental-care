@@ -57,7 +57,32 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => (function () {
+                    $content = env('MYSQL_ATTR_SSL_CA_CONTENT');
+
+                    if ($content) {
+                        // Support either raw PEM or base64-encoded PEM in env var
+                        $decoded = $content;
+                        if (strpos($content, '-----BEGIN') === false) {
+                            $maybe = base64_decode($content, true);
+                            if ($maybe !== false && strpos($maybe, '-----BEGIN') !== false) {
+                                $decoded = $maybe;
+                            }
+                        }
+
+                        // Write PEM content to a temp file so runtimes (Vercel/Lambda) can provide the CA via an env var
+                        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.'aiven-ca.pem';
+                        // Only write if file missing or content changed
+                        if (!file_exists($path) || file_get_contents($path) !== $decoded) {
+                            file_put_contents($path, $decoded);
+                        }
+
+                        return $path;
+                    }
+
+                    // Fallback to explicit path if provided
+                    return env('MYSQL_ATTR_SSL_CA');
+                })(),
             ]) : [],
         ],
 
@@ -77,7 +102,32 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => (function () {
+                    $content = env('MYSQL_ATTR_SSL_CA_CONTENT');
+
+                    if ($content) {
+                        // Support either raw PEM or base64-encoded PEM in env var
+                        $decoded = $content;
+                        if (strpos($content, '-----BEGIN') === false) {
+                            $maybe = base64_decode($content, true);
+                            if ($maybe !== false && strpos($maybe, '-----BEGIN') !== false) {
+                                $decoded = $maybe;
+                            }
+                        }
+
+                        // Write PEM content to a temp file so runtimes (Vercel/Lambda) can provide the CA via an env var
+                        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.'aiven-ca.pem';
+                        // Only write if file missing or content changed
+                        if (!file_exists($path) || file_get_contents($path) !== $decoded) {
+                            file_put_contents($path, $decoded);
+                        }
+
+                        return $path;
+                    }
+
+                    // Fallback to explicit path if provided
+                    return env('MYSQL_ATTR_SSL_CA');
+                })(),
             ]) : [],
         ],
 
