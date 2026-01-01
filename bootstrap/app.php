@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\StudentMiddleware;
 use App\Http\Middleware\CounselorMiddleware;
 use App\Http\Middleware\HasConsultationRequest;
+use Symfony\Component\HttpFoundation\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'counselor'        => CounselorMiddleware::class,
             'has.consultation' => HasConsultationRequest::class,
         ]);
+
+        $middleware->trustProxies("*", Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
